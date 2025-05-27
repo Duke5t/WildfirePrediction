@@ -1,5 +1,4 @@
-import MLRImputation
-# import LRImputation
+import Imputation
 import pandas as pd
 import os
 
@@ -17,9 +16,10 @@ class DataCleaning:
         self.df = self.df[selectedCols]
                
 
-        self.df = MLRImputation.MLRImputation(self.df, quantFeat, catFeat)
-        # self.df = LRImputation.LRImputation(self.df, quantFeat, catFeat)
-        
+        self.df = Imputation.Imputation(self.df, quantFeat, catFeat)
+
+
+
     #Takes data file (.xlsx) within same filepath/directory 
     #creates and returns pandas dataframe
     def createDataFrame(self):

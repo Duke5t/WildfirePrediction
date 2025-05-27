@@ -6,7 +6,7 @@ def main():
 
     data = DataCleaning.DataCleaning("fire20062024.xlsx") 
 
-    print(data.df.isnull().sum())
+    #check to see how many rows with null values // should be 0
 
 if __name__ == "__main__":
     main()
