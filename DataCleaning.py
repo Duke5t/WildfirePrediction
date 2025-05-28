@@ -4,33 +4,55 @@ import os
 
 class DataCleaning:
 
-    def __init__(self, fileName):
-        self._fileName = fileName
-        self.df = self.createDataFrame()
+    def __init__(self, fileNames):
+        self.df = pd.DataFrame()
 
-        quantFeat = ["FIRE_SPREAD_RATE", "TEMPERATURE", "RELATIVE_HUMIDITY", "WIND_SPEED", "ASSESSMENT_HECTARES"]
-        catFeat = ["FIRE_TYPE", "FUEL_TYPE", "WIND_DIRECTION", "FIRE_POSITION_ON_SLOPE", "WEATHER_CONDITIONS_OVER_FIRE", "SIZE_CLASS"]
+        # Read and combine all files into a single DataFrame
+        if isinstance(fileNames, list):
+            for fileName in fileNames:
+                temp_df = self.createDataFrame(fileName)
+                print(temp_df.shape[0])
+                print(temp_df.columns.values)
+                if temp_df is not None:
+                    self.df = pd.concat([self.df, temp_df], ignore_index=True)
+        else:
+            temp_df = self.createDataFrame(fileNames)
+            if temp_df is not None:
+                self.df = temp_df
+
+        quantFeat = ["TEMPERATURE", "RELATIVE_HUMIDITY", "WIND_SPEED"]
+        catFeat = ["FUEL_TYPE", "WIND_DIRECTION", "FIRE_POSITION_ON_SLOPE", "WEATHER_CONDITIONS_OVER_FIRE", "GENERAL_CAUSE", "SIZE_CLASS"]
+
+        predictFeat = ["FIRE_SPREAD_RATE", "SIZE_CLASS"]
 
         #Drops unused features
         selectedCols = quantFeat + catFeat
         self.df = self.df[selectedCols]
-               
 
+        print(self.df.head(50))
+               
+        # Exploration.Exploration(self.df, quantFeat, catFeat)
         self.df = Imputation.Imputation(self.df, quantFeat, catFeat)
 
 
 
-    #Takes data file (.xlsx) within same filepath/directory 
+    #Takes data file (.xlsx or .csv) within same filepath/directory 
     #creates and returns pandas dataframe
-    def createDataFrame(self):
+    def createDataFrame(self, fileName):
         try:
-            scriptDir = os.path.dirname(os.path.abspath(__file__))
-            filePath = os.path.join(scriptDir, self._fileName)
-            return pd.read_excel(filePath)
+            filePath = os.path.abspath(fileName)
+            
+            #checks if csv or excel and reads to pd.DF accordingly
+            if fileName.lower().endswith(".csv"):
+                return pd.read_csv(filePath)
+            elif fileName.lower().endswith(".xlsx"):
+                return pd.read_excel(filePath)
+            else:
+                print("Error: Unsupported file type")
+                return None
         except FileNotFoundError:
-            print(f"Error: File '{self._fileName}' not found.")
+            print(f"Error: File '{fileName}' not found.")
             return None
         except Exception as e:
-            print(f"Error reading Excel file: {e}")
+            print(f"Error reading file: {e}")
             return None
-    
