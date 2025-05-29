@@ -20,19 +20,19 @@ class DataCleaning:
             if temp_df is not None:
                 self.df = temp_df
 
-        quantFeat = ["TEMPERATURE", "RELATIVE_HUMIDITY", "WIND_SPEED"]
-        catFeat = ["FUEL_TYPE", "WIND_DIRECTION", "FIRE_POSITION_ON_SLOPE", "WEATHER_CONDITIONS_OVER_FIRE", "GENERAL_CAUSE", "SIZE_CLASS"]
+        self.quantFeat = ["TEMPERATURE", "RELATIVE_HUMIDITY", "WIND_SPEED"]
+        self.catFeat = ["FUEL_TYPE", "WIND_DIRECTION", "FIRE_POSITION_ON_SLOPE", "WEATHER_CONDITIONS_OVER_FIRE", "GENERAL_CAUSE", "SIZE_CLASS"] #FIRE DATE
 
-        predictFeat = ["FIRE_SPREAD_RATE", "SIZE_CLASS"]
+        self.predictFeat = ["FIRE_SPREAD_RATE", "SIZE_CLASS"]
 
         #Drops unused features
-        selectedCols = quantFeat + catFeat
+        selectedCols = self.quantFeat + self.catFeat + self.predFeat
         self.df = self.df[selectedCols]
 
         print(self.df.head(50))
                
         # Exploration.Exploration(self.df, quantFeat, catFeat)
-        self.df = Imputation.Imputation(self.df, quantFeat, catFeat)
+        self.df = Imputation.Imputation(self.df, self.quantFeat, self.catFeat)
 
 
 
