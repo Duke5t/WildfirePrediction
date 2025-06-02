@@ -1,4 +1,4 @@
-import Imputation
+import Interpolation
 import pandas as pd
 import os
 
@@ -26,13 +26,13 @@ class DataCleaning:
         self.predictFeat = ["FIRE_SPREAD_RATE", "SIZE_CLASS"]
 
         #Drops unused features
-        selectedCols = self.quantFeat + self.catFeat + self.predFeat
+        selectedCols = self.quantFeat + self.catFeat + self.predictFeat
         self.df = self.df[selectedCols]
 
         print(self.df.head(50))
                
         # Exploration.Exploration(self.df, quantFeat, catFeat)
-        self.df = Imputation.Imputation(self.df, self.quantFeat, self.catFeat)
+        self.df = Interpolation.Interpolation(self.df, self.quantFeat, self.catFeat)
 
 
 
