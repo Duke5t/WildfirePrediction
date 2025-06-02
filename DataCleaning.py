@@ -21,9 +21,9 @@ class DataCleaning:
                 self.df = temp_df
 
         self.quantFeat = ["TEMPERATURE", "RELATIVE_HUMIDITY", "WIND_SPEED"]
-        self.catFeat = ["FUEL_TYPE", "WIND_DIRECTION", "FIRE_POSITION_ON_SLOPE", "WEATHER_CONDITIONS_OVER_FIRE", "GENERAL_CAUSE", "SIZE_CLASS"] #FIRE DATE
+        self.catFeat = ["FUEL_TYPE", "WIND_DIRECTION", "FIRE_POSITION_ON_SLOPE", "WEATHER_CONDITIONS_OVER_FIRE", "GENERAL_CAUSE"]#, "SIZE_CLASS"] #FIRE DATE
 
-        self.predictFeat = ["FIRE_SPREAD_RATE", "SIZE_CLASS"]
+        self.predictFeat = ["FIRE_SPREAD_RATE", "SIZE_CLASS"] # 
 
         #Drops unused features
         selectedCols = self.quantFeat + self.catFeat + self.predictFeat
@@ -31,8 +31,16 @@ class DataCleaning:
 
         print(self.df.head(50))
                
-        # Exploration.Exploration(self.df, quantFeat, catFeat)
-        self.df = Interpolation.Interpolation(self.df, self.quantFeat, self.catFeat)
+
+
+        #Creates cleaned data by Interpolating with Lin and Log regression
+        self.dfInterpolated = Interpolation.Interpolation(self.df, self.quantFeat, self.catFeat).df
+        
+        #Creates cleaned data by dropping null values
+        self.dfDropNull = self.df.copy().dropna().reset_index(drop=True) 
+        
+        #Creates cleaned data by Imputing mean and mode values.
+        # self.dfImputed = Imputation.Imputation(self.df, self.quantFeat, self.catFeat)
 
 
 

@@ -35,20 +35,20 @@ class Interpolation:
     _logRegEpsilon = 0.001 ##Convergence Rate for Logistic Regression
 
     #args - original pandas dataframe, quantitative features, categorical features, actual feature to impute values
-    #returns - data frame with null values replaced with imputed values. 
+    #returns - data frame with null values replaced with interpolated values. 
     def __init__(self, df, quantFeatures, catFeatures):
 
         self.df = df.copy() #includes only features being used
         print(self.df.shape[0])
 
-        #runs Interpolation on each quantitative feature and updates dataframe NA cells with imputed values  
+        #runs Interpolation on each quantitative feature and updates dataframe NA cells with interpolated values  
         for actual in quantFeatures:
             rQuantFeatures = [feature for feature in quantFeatures if feature != actual]
             print(f"Running Interpolation on :{actual}")
             self.prepData(df, rQuantFeatures, catFeatures, actual)
             self.runQuantInterpolation(rQuantFeatures, catFeatures, actual)
 
-        #runs Interpolation on each categorical feature and updates dataframe NA cells with imputed values  
+        #runs Interpolation on each categorical feature and updates dataframe NA cells with interpolated values  
         for actual in catFeatures:
             rCatFeatures = [feature for feature in catFeatures if feature != actual]
             print(f"Running Interpolation on :{actual}")
@@ -151,11 +151,10 @@ class Interpolation:
         self.catModes = {}        # Store most common value per column (for missing value fill)
         self.oneHotEncoder = OneHotEncoder(sparse_output=False, handle_unknown='ignore') # Set up OHE
 
-        # Fill missing values in each column with mode
-        for col in cols:
-            mode = x[col].astype(str).str.strip().mode()[0]
+        # Find mode values for each feature
+        for col in cols:      
+            mode = x[col].astype(str).str.strip().mode(dropna=True)[0]
             self.catModes[col] = mode
-            x[col] = x[col].astype(str).str.strip().fillna(mode)
 
         #Transforms features to encodedArray using OHE
         encodedArray = self.oneHotEncoder.fit_transform(x[cols])
