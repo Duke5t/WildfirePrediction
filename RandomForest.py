@@ -47,8 +47,6 @@ class RandomForest:
         self.fireRF.fit(self.fireX, self.fireY) 
 
 
-
-
         print(f'Predicting {predFeat}. Num classes: {len(self.labelEncoder.classes_)}')
 
         if testData is not None:
@@ -96,3 +94,4 @@ class RandomForest:
         cmd.plot(cmap=plt.cm.Blues)
         plt.title("Confusion Matrix (Special Test Data)")
         plt.show()
+

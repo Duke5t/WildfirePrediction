@@ -10,9 +10,11 @@ def main():
 
     #Interpolates missing data with Linear and Logistic regression
     dataInterpolated = data.dfInterpolated
+    
     #Imputes missing data with mean and mode feature values  
     # dataImputed = data.dfImputed
 
+    #Drops NA values from data
     dfDropNull = data.dfDropNull
 
     # RandomForest.RandomForest(dataInterpolated, data.quantFeat, data.catFeat, data.predictFeat[0])
