@@ -1,4 +1,5 @@
 import Interpolation
+import Imputation
 import pandas as pd
 import os
 
@@ -40,7 +41,7 @@ class DataCleaning:
         self.dfDropNull = self.df.copy().dropna().reset_index(drop=True) 
         
         #Creates cleaned data by Imputing mean and mode values.
-        # self.dfImputed = Imputation.Imputation(self.df, self.quantFeat, self.catFeat)
+        self.dfImputed = Imputation.Imputation(self.df, self.quantFeat, self.catFeat)
 
 
 

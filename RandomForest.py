@@ -11,7 +11,6 @@ import matplotlib.pyplot as plt
 # Bagging - Compliment of Bag 1 and original data is called "Out Of Bag Data" (data that is in Original and not in Bag1)
 
 # Feature Randomization - Each bag is assigned a subset of features (formula: num features in subset = sqrt(total features))
-# Reference : https://www.youtube.com/watch?v=IYXeCgMQ4to&ab_channel=DavidLanger
 
 
 # 
@@ -48,6 +47,7 @@ class RandomForest:
 
 
         print(f'Predicting {predFeat}. Num classes: {len(self.labelEncoder.classes_)}')
+        print(f'Accuracy with OOB data: {self.fireRF.oob_score_:.4f}') #Prints accuracy when compared to OOB Data (Out Of Bag)
 
         if testData is not None:
             self.testX = pd.concat([testData[quantFeat], self.encodeCat(testData,catFeat, fit=False)], axis=1)
@@ -56,7 +56,6 @@ class RandomForest:
             
             print(f'Accuracy with special test data (no interpolation or imputation): {accuracy_score(self.testY, self.yHat):.4f}')
 
-        print(f'Accuracy with OOB data: {self.fireRF.oob_score_:.4f}') #Prints accuracy when compared to OOB Data (Out Of Bag)
         print(f'Accuracy with training data (should be high): {self.fireRF.score(self.fireX, self.fireY):.4f}') #Prints accuracy when compared to training Data (should be really high)
 
         if predFeatCat:
