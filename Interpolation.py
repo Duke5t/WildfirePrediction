@@ -37,6 +37,7 @@ class Interpolation:
     #args - original pandas dataframe, quantitative features, categorical features, actual feature to impute values
     #returns - data frame with null values replaced with interpolated values. 
     def __init__(self, df, quantFeatures, catFeatures):
+        print("\n---INTERPOLATION---\n")
 
         self.df = df.copy() #includes only features being used
         print(self.df.shape[0])
@@ -58,7 +59,7 @@ class Interpolation:
         # Confirms final df has no null values remaining
         print(self.df.shape[0])
         self.showFeatureNAs(self.df)
-        print(self.df.head(50))
+        print(self.df.head(10))
 
     # Drops rows with any NA values
     # Normalizes data
@@ -78,6 +79,8 @@ class Interpolation:
         self.div = np.random.rand(len(self.dfNoNull)) < 0.8
         self.xTrain = self.normalizedDF[self.div].values
         self.xTest = self.normalizedDF[~self.div].values
+
+        ##Flattens quant Y variable, strips if the 'actual' variable is categorical
         if isActualCategorical:
             self.yTrain = self.dfActual[self.div].astype(str).str.strip().values
             self.yTest = self.dfActual[~self.div].astype(str).str.strip().values

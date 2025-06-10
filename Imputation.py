@@ -11,7 +11,7 @@ class Imputation:
     #args - original pandas dataframe, quantitative features, categorical features, actual feature to impute values
     #returns - data frame with null values replaced with imputed values. 
     def __init__(self, df, quantFeatures, catFeatures):
-
+        print("\n---IMPUTATION---\n")
         self.df = df.copy() #includes only features being used
         self.showFeatureNAs(self.df)
 
@@ -27,7 +27,7 @@ class Imputation:
         # Confirms final df has no null values remaining
         print(self.df.shape[0])
         self.showFeatureNAs(self.df)
-        print(self.df.head(50))
+        print(self.df.head(10))
 
     # Fill missing values in quantitative features with the mean
     def quantFillMean(self, cols):

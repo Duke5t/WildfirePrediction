@@ -6,6 +6,7 @@ import os
 class DataCleaning:
 
     def __init__(self, fileNames):
+        print("\n---DATACLEANING---\n")
         self.df = pd.DataFrame()
 
         # Read and combine all files into a single DataFrame
@@ -30,19 +31,17 @@ class DataCleaning:
         selectedCols = self.quantFeat + self.catFeat + self.predictFeat
         self.df = self.df[selectedCols]
 
-        print(self.df.head(50))
+        print(self.df.head(10))
                
-
 
         #Creates cleaned data by Interpolating with Lin and Log regression
         self.dfInterpolated = Interpolation.Interpolation(self.df, self.quantFeat, self.catFeat).df
-        
+
         #Creates cleaned data by dropping null values
         self.dfDropNull = self.df.copy().dropna().reset_index(drop=True) 
         
         #Creates cleaned data by Imputing mean and mode values.
         self.dfImputed = Imputation.Imputation(self.df, self.quantFeat, self.catFeat)
-
 
 
     #Takes data file (.xlsx or .csv) within same filepath/directory 
@@ -65,3 +64,9 @@ class DataCleaning:
         except Exception as e:
             print(f"Error reading file: {e}")
             return None
+        
+    def setQuantitativeFeautures(self, features):
+        self.quantFeat = features
+
+    def setCategoricalFeatures(self, features):
+        self.catFeat = features
