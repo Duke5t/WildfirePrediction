@@ -24,6 +24,12 @@ class XGBoost:
     def __init__(self, df, quantFeat, catFeat, predFeat, predFeatCat = False):
         print(f"\n---XGBOOST---\n\":{predFeat}\"")
 
+        ##Parameters##
+        self.quantLearnRate = 1
+        self.catLearnRate = 1
+        self.quantNumBoostedTrees = 2
+        self.catNumBoostedTrees = 2
+
         self.df = df.copy()
         self.labelEncoder = LabelEncoder()
 
@@ -59,7 +65,7 @@ class XGBoost:
         #objective = learning model (log regression softmax = multi:softprob)
         #learning rate = scaler multiplier to default??? maybe???
 
-        self.bst = XGBClassifier(n_estimators = 2, learning_rate = 1, 
+        self.bst = XGBClassifier(n_estimators = self.catNumBoostedTrees, learning_rate = self.catLearnRate, 
                                 objective = 'multi:softprob', enable_categorical = True, 
                                 eval_metric = "mlogloss", tree_method = 'hist')
 
@@ -76,7 +82,7 @@ class XGBoost:
     def xgbQuant(self, X_train, X_test, y_train, y_test):
 
 
-        self.bst = XGBRegressor(n_estimators = 2, learning_rate = 1, 
+        self.bst = XGBRegressor(n_estimators = self.quantNumBoostedTrees, learning_rate = self.quantLearnRate, 
                            objective = 'reg:squarederror', enable_categorical = True,
                            eval_metric = 'rmse', tree_method = 'hist')
         # fit model
@@ -90,7 +96,7 @@ class XGBoost:
 
     def plotCat(self):
         results = self.bst.evals_result()
-        plt.plot(results['validation_0']['mlogloss'], label='Test Loss')
+        plt.plot(results['validation_0']['mlogloss'], label='Loss')
         plt.title("XGBoost Log Loss Over Iterations")
         plt.xlabel("Iterations")
         plt.ylabel("Log Loss")

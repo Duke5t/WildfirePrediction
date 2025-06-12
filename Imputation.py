@@ -12,6 +12,7 @@ class Imputation:
     #returns - data frame with null values replaced with imputed values. 
     def __init__(self, df, quantFeatures, catFeatures):
         print("\n---IMPUTATION---\n")
+
         self.df = df.copy() #includes only features being used
         self.showFeatureNAs(self.df)
 

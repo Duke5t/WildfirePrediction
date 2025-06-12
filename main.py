@@ -1,5 +1,4 @@
 import Interpolation
-import RandomForest1
 import RandomForest
 import XGBoost
 import DataCleaning
@@ -7,28 +6,35 @@ import pandas as pd
 import time
 
 def main():
-
-    TEST = False
-    
     data = DataCleaning.DataCleaning("fire20062024.xlsx") #, "fire19962005.csv", "fire19831995.csv"  
+
+    ##TEST Boolean used to expedite debuging of models. Triggers all other class test booleans 
+    TEST = False #TOGGLE ME 
+    if TEST:
+        data.TEST = True
+
+
+    
+    data.setQuantitativeFeatures(["TEMPERATURE", "RELATIVE_HUMIDITY", "WIND_SPEED"]) #, "DISTANCE_FROM_WATER_SOURCE"
+    data.setCategoricalFeatures(["FUEL_TYPE", "TRUE_CAUSE", "DETECTION_AGENT", "DETECTION_AGENT_TYPE", "FIRE_POSITION_ON_SLOPE", "WEATHER_CONDITIONS_OVER_FIRE", "GENERAL_CAUSE"])
+    data.setPredictionFeatures(["FIRE_SPREAD_RATE", "SIZE_CLASS"])
+
+    data.createDataFrames()
     dataRaw = data.df
 
     #Interpolates missing data with Linear and Logistic regression
     if not TEST:
         dataInterpolated = data.dfInterpolated
-
-    #Imputes missing data with mean and mode feature values  
-    if not TEST:
+        #Imputes missing data with mean and mode feature values  
         dataImputed = data.dfImputed
-
-    # Drops NA values from data
-    if not TEST:
+        # Drops NA values from data
         dfDropNull = data.dfDropNull
 
     if TEST:
         dataInterpolated = data.dfDropNull
         dataImputed = data.dfDropNull
         dfDropNull = data.dfDropNull
+
 
 
         

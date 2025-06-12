@@ -33,6 +33,7 @@ class Interpolation:
     _linRegEpsilon = 0.001 ##Convergence Rate for Linear Regression
     _logRegAlpha = 0.01 ##Learning Rate for Logisitc Regression
     _logRegEpsilon = 0.001 ##Convergence Rate for Logistic Regression
+    _testTrainSplit = 0.85 #.8 = 80% Train / 20% Test
 
     #args - original pandas dataframe, quantitative features, categorical features, actual feature to impute values
     #returns - data frame with null values replaced with interpolated values. 
@@ -67,7 +68,7 @@ class Interpolation:
     def prepData(self, df, quantFeatures, catFeatures, actual, isActualCategorical = False):
         # Drops rows which contain NA values in any selected column
         self.dfNoNull = df.copy().dropna().reset_index(drop=True) 
-        print(f"# of Rows in DF without null vals: {self.dfNoNull.shape[0]}")
+        print(f"# of Rows in Feature with null vals: {self.df[actual].isnull().sum()}")
         # Creates copies of df for quantitative, catergorical features and the intended/actual feature to impute
         self.dfQuant = self.dfNoNull[quantFeatures].copy()
         self.dfCat = self.dfNoNull[catFeatures].copy()
@@ -76,7 +77,7 @@ class Interpolation:
         self.normalizedDF = self.normalizeData(self.dfQuant, self.dfCat, quantFeatures, catFeatures)
 
         # Divide 80/20 train/test data
-        self.div = np.random.rand(len(self.dfNoNull)) < 0.8
+        self.div = np.random.rand(len(self.dfNoNull)) < self._testTrainSplit
         self.xTrain = self.normalizedDF[self.div].values
         self.xTest = self.normalizedDF[~self.div].values
 
@@ -193,7 +194,7 @@ class Interpolation:
 
 
     def gradientDescent(self, x, y, w0, b0, alpha):
-        maxIters = 1000000
+        maxIters = 250000
         epsilon = self._linRegEpsilon #minimum difference between iteration errors to trigger satsfaction.
         history = []
         w = copy.deepcopy(w0)
@@ -234,7 +235,7 @@ class Interpolation:
         return np.argmax(probs, axis=1)
 
     def softmaxGradientDescent(self, x, y, w, b, alpha, numClasses):
-        maxIters= 1000
+        maxIters= 25000
         epsilon = self._logRegEpsilon
         m = x.shape[0]
         history = []

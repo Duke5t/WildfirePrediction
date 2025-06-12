@@ -33,7 +33,7 @@ class RandomForest:
         print("\n---RANDOM FOREST---\n")
 
         NUM_TREES_CAT = 400 # Number of trees in the forest - categorical predicition
-        NUM_TREES_QUANT = 100 # Number of trees in the forest - quantitative predicition
+        NUM_TREES_QUANT = 400 # Number of trees in the forest - quantitative predicition
         
 
         self.df = df.copy()
@@ -88,6 +88,8 @@ class RandomForest:
 
 
         print(f'Predicting {predFeat}.')
+        if testData is not None:
+            print("(With Special Test Data)")
 
 
         # IF the feature we're predicting is categorical 
@@ -147,5 +149,5 @@ class RandomForest:
         cm = confusion_matrix(self.testY, self.yHat)
         cmd = ConfusionMatrixDisplay(cm, display_labels=self.labelEncoder.classes_)
         cmd.plot(cmap=plt.cm.Blues)
-        plt.title("Confusion Matrix (Special Test Data)")
+        plt.title("Confusion Matrix")
         plt.show()
