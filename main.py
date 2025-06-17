@@ -3,7 +3,11 @@ import RandomForest
 import XGBoost
 import DataCleaning
 import pandas as pd
-import time
+import EDA
+import LightGBM
+
+#Notes:
+#IF we use test data in a model, we must use either interpolated or imputed data since those dataFrames exclude test data
 
 def main():
     data = DataCleaning.DataCleaning("fire20062024.xlsx") #, "fire19962005.csv", "fire19831995.csv"  
@@ -21,6 +25,7 @@ def main():
 
     data.createDataFrames()
     dataRaw = data.df
+    testData = data.dfTestData
 
     #Interpolates missing data with Linear and Logistic regression
     if not TEST:
@@ -39,19 +44,36 @@ def main():
 
         
     #EDA
-
+    # EDA.EDA(data.df)
     #END EDA
 
+
+
+
+
     #RandomForest
-    # RandomForest.RandomForest(dataInterpolated, data.quantFeat, data.catFeat, data.predictFeat[0], predFeatCat = False, testData = dfDropNull)
-    RandomForest.RandomForest(dataInterpolated, data.quantFeat, data.catFeat, data.predictFeat[0], predFeatCat = False)
-    # RandomForest.RandomForest(dataInterpolated, data.quantFeat, data.catFeat, data.predictFeat[1], predFeatCat = True, testData = dfDropNull)
-    RandomForest.RandomForest(dataInterpolated, data.quantFeat, data.catFeat, data.predictFeat[1], predFeatCat = True)
+    # RFModel_IntFireSpread = RandomForest.RandomForest(dataInterpolated, data.quantFeat, data.catFeat, data.predictFeat[0], predFeatCat = False, testData = testData)
+    # RFModel_ImpFireSpread = RandomForest.RandomForest(dataImputed, data.quantFeat, data.catFeat, data.predictFeat[0], predFeatCat = False, testData = testData)
+    # RandomForest.RandomForest(dataInterpolated, data.quantFeat, data.catFeat, data.predictFeat[0], predFeatCat = False)
+
+    # RFModel_IntSizeClass = RandomForest.RandomForest(dataInterpolated, data.quantFeat, data.catFeat, data.predictFeat[1], predFeatCat = True, testData = testData)
+    # RFModel_ImpSizeClass = RandomForest.RandomForest(dataImputed, data.quantFeat, data.catFeat, data.predictFeat[1], predFeatCat = True, testData = testData)
+    # RandomForest.RandomForest(dataInterpolated, data.quantFeat, data.catFeat, data.predictFeat[1], predFeatCat = True)
     
 
     # XGBoost - uses data with null values
-    XGBoost.XGBoost(dataRaw, data.quantFeat, data.catFeat, data.predictFeat[0], predFeatCat = False)
-    XGBoost.XGBoost(dataRaw, data.quantFeat, data.catFeat, data.predictFeat[1], predFeatCat = True)
+    # XGBModel_FireSpread = XGBoost.XGBoost(dataRaw, data.quantFeat, data.catFeat, data.predictFeat[0], predFeatCat = False)
+    # XGBModel_SizeClass = XGBoost.XGBoost(dataRaw, data.quantFeat, data.catFeat, data.predictFeat[1], predFeatCat = True)
+
+    # XGBModel_SizeClass = XGBoost.XGBoost(dataImputed, data.quantFeat, data.catFeat, data.predictFeat[1], predFeatCat = True, testData = testData)
+
+
+    #LightGBM
+    LGBM_FireSpread = LightGBM.LightGBM(dataInterpolated, data.quantFeat, data.catFeat, data.predictFeat[0], predFeatCat = False)
+    LGBM_SizeClass = LightGBM.LightGBM(dataInterpolated, data.quantFeat, data.catFeat, data.predictFeat[1], predFeatCat = True, testData = testData)
+
+
+
 
 
 

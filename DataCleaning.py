@@ -49,8 +49,6 @@ class DataCleaning:
 
         #Creates a test set to be used later. 
         #Using 20% of the data but only if it has no null value
-        # print("SHAPE:", self.df.shape[0])
-        # print("NOT NULL SHAPE", self.dfDropNull.shape[0])
         ratio = self.df.shape[0]*self._testSplit/self.dfDropNull.shape[0]
         if(ratio > 1):
             raise Exception(f"Error: Not enough data without null values to populate Test DataFrame. Cannot make subset of {ratio: .2f}, x size.")
@@ -59,6 +57,7 @@ class DataCleaning:
 
 
         self.div = np.random.rand(len(self.dfDropNull)) < ratio
+        #Sets special test subset containing complete data (no null, no interpolated, no imputed data)
         self.dfTestData = self.dfDropNull[self.div]
 
 
@@ -74,7 +73,7 @@ class DataCleaning:
             #Removes any data that is also contained in the test df
             self.dfImputed = pd.concat([self.dfImputed, self.dfTestData]).drop_duplicates(keep=False)
 
-        #Creates cleaned data by dropping null values
+
 
 
 

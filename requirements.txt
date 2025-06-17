@@ -3,3 +3,7 @@ pandas
 numpy
 xgboost
 matplotlib
+shapely
+folium
+imbalanced-learn
+lightgbm

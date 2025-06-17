@@ -97,7 +97,7 @@ class Interpolation:
         alpha = self._linRegAlpha #Learning rate
 
         weightVector, intercept, history = self.gradientDescent(self.xTrain, self.yTrain, w0, b0, alpha)
-        print(f"intercept, weights found by gradient descent: {intercept:0.2f}, {weightVector} ")
+        # print(f"intercept, weights found by gradient descent: {intercept:0.2f}, {weightVector} ")
         # print(f"history: {history}")
 
         yPred = self.predict(self.xTest, weightVector, intercept)
