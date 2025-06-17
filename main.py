@@ -52,18 +52,18 @@ def main():
 
 
     #RandomForest
-    # RFModel_IntFireSpread = RandomForest.RandomForest(dataInterpolated, data.quantFeat, data.catFeat, data.predictFeat[0], predFeatCat = False, testData = testData)
-    # RFModel_ImpFireSpread = RandomForest.RandomForest(dataImputed, data.quantFeat, data.catFeat, data.predictFeat[0], predFeatCat = False, testData = testData)
+    RFModel_IntFireSpread = RandomForest.RandomForest(dataInterpolated, data.quantFeat, data.catFeat, data.predictFeat[0], predFeatCat = False, testData = testData)
+    RFModel_ImpFireSpread = RandomForest.RandomForest(dataImputed, data.quantFeat, data.catFeat, data.predictFeat[0], predFeatCat = False, testData = testData)
     # RandomForest.RandomForest(dataInterpolated, data.quantFeat, data.catFeat, data.predictFeat[0], predFeatCat = False)
 
-    # RFModel_IntSizeClass = RandomForest.RandomForest(dataInterpolated, data.quantFeat, data.catFeat, data.predictFeat[1], predFeatCat = True, testData = testData)
-    # RFModel_ImpSizeClass = RandomForest.RandomForest(dataImputed, data.quantFeat, data.catFeat, data.predictFeat[1], predFeatCat = True, testData = testData)
+    RFModel_IntSizeClass = RandomForest.RandomForest(dataInterpolated, data.quantFeat, data.catFeat, data.predictFeat[1], predFeatCat = True, testData = testData)
+    RFModel_ImpSizeClass = RandomForest.RandomForest(dataImputed, data.quantFeat, data.catFeat, data.predictFeat[1], predFeatCat = True, testData = testData)
     # RandomForest.RandomForest(dataInterpolated, data.quantFeat, data.catFeat, data.predictFeat[1], predFeatCat = True)
     
 
     # XGBoost - uses data with null values
-    # XGBModel_FireSpread = XGBoost.XGBoost(dataRaw, data.quantFeat, data.catFeat, data.predictFeat[0], predFeatCat = False)
-    # XGBModel_SizeClass = XGBoost.XGBoost(dataRaw, data.quantFeat, data.catFeat, data.predictFeat[1], predFeatCat = True)
+    XGBModel_FireSpread = XGBoost.XGBoost(dataRaw, data.quantFeat, data.catFeat, data.predictFeat[0], predFeatCat = False)
+    XGBModel_SizeClass = XGBoost.XGBoost(dataRaw, data.quantFeat, data.catFeat, data.predictFeat[1], predFeatCat = True)
 
     # XGBModel_SizeClass = XGBoost.XGBoost(dataImputed, data.quantFeat, data.catFeat, data.predictFeat[1], predFeatCat = True, testData = testData)
 
