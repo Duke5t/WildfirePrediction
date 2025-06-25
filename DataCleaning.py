@@ -28,7 +28,8 @@ class DataCleaning:
             if temp_df is not None:
                 self.df = temp_df
 
-        
+
+
         #Dummy features:
         self.quantFeat = ["TEMPERATURE", "RELATIVE_HUMIDITY", "WIND_SPEED"] # , "DISTANCE_FROM_WATER_SOURCE"
         self.catFeat = ["FUEL_TYPE", "TRUE_CAUSE", "DETECTION_AGENT", "DETECTION_AGENT_TYPE", "FIRE_POSITION_ON_SLOPE", "WEATHER_CONDITIONS_OVER_FIRE", "GENERAL_CAUSE"]
@@ -40,6 +41,10 @@ class DataCleaning:
         #Drops unused features
         selectedCols = self.quantFeat + self.catFeat + self.predictFeat
         self.df = self.df[selectedCols]
+        
+        #Removes firespread values <0 from DF
+        self.df = self.df[self.df["FIRE_SPREAD_RATE"] >= 0]
+
 
         print(self.df.head(10))
 
@@ -59,6 +64,8 @@ class DataCleaning:
         self.div = np.random.rand(len(self.dfDropNull)) < ratio
         #Sets special test subset containing complete data (no null, no interpolated, no imputed data)
         self.dfTestData = self.dfDropNull[self.div]
+        self.dfTestData = self.dfTestData[self.dfTestData["FIRE_SPREAD_RATE"] >= 0]
+
 
 
 
@@ -110,3 +117,7 @@ class DataCleaning:
     # ratio = .2 by deafult (20% of original data with no null values becomes exclusively test data)
     def setTestSplit(self, ratio):
         self._testSplit = ratio
+
+
+    def removeNegativeFireSpreadData(self):
+        self.df = self.df[self.df["FIRE_SPREAD_RATE"] >= 0]

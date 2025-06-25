@@ -33,12 +33,12 @@ def main():
         #Imputes missing data with mean and mode feature values  
         dataImputed = data.dfImputed
         # Drops NA values from data
-        dfDropNull = data.dfDropNull
+        dataDropNull = data.dfDropNull
 
     if TEST:
         dataInterpolated = data.dfDropNull
         dataImputed = data.dfDropNull
-        dfDropNull = data.dfDropNull
+        dataDropNull = data.dfDropNull
 
 
 
@@ -52,12 +52,21 @@ def main():
 
 
     #RandomForest
-    RFModel_IntFireSpread = RandomForest.RandomForest(dataInterpolated, data.quantFeat, data.catFeat, data.predictFeat[0], predFeatCat = False, testData = testData)
-    RFModel_ImpFireSpread = RandomForest.RandomForest(dataImputed, data.quantFeat, data.catFeat, data.predictFeat[0], predFeatCat = False, testData = testData)
-    # RandomForest.RandomForest(dataInterpolated, data.quantFeat, data.catFeat, data.predictFeat[0], predFeatCat = False)
+    # print("\n\nRF Interpolated")
+    # RFModel_IntFireSpread = RandomForest.RandomForest(dataInterpolated, data.quantFeat, data.catFeat, data.predictFeat[0], predFeatCat = False, testData = testData)
+    # print("\n\nRF Imputed")
+    # RFModel_ImpFireSpread = RandomForest.RandomForest(dataImputed, data.quantFeat, data.catFeat, data.predictFeat[0], predFeatCat = False, testData = testData)
+    # print("\n\nRF DropNull")
+    # RFModel_NoNullFireSpread = RandomForest.RandomForest(dataDropNull, data.quantFeat, data.catFeat, data.predictFeat[0], predFeatCat = False)
+    
+    # # RandomForest.RandomForest(dataInterpolated, data.quantFeat, data.catFeat, data.predictFeat[0], predFeatCat = False)
 
-    RFModel_IntSizeClass = RandomForest.RandomForest(dataInterpolated, data.quantFeat, data.catFeat, data.predictFeat[1], predFeatCat = True, testData = testData)
-    RFModel_ImpSizeClass = RandomForest.RandomForest(dataImputed, data.quantFeat, data.catFeat, data.predictFeat[1], predFeatCat = True, testData = testData)
+    # print("\n\nRF Interpolated")
+    # RFModel_IntSizeClass = RandomForest.RandomForest(dataInterpolated, data.quantFeat, data.catFeat, data.predictFeat[1], predFeatCat = True, testData = testData)
+    # print("\n\nRF Imputed")
+    # RFModel_ImpSizeClass = RandomForest.RandomForest(dataImputed, data.quantFeat, data.catFeat, data.predictFeat[1], predFeatCat = True, testData = testData)
+    # print("\n\nRF NoNull")
+    # RFModel_NoNullSizeClass = RandomForest.RandomForest(dataDropNull, data.quantFeat, data.catFeat, data.predictFeat[1], predFeatCat = True)
     # RandomForest.RandomForest(dataInterpolated, data.quantFeat, data.catFeat, data.predictFeat[1], predFeatCat = True)
     
 
@@ -69,10 +78,8 @@ def main():
 
 
     #LightGBM
-    LGBM_FireSpread = LightGBM.LightGBM(dataInterpolated, data.quantFeat, data.catFeat, data.predictFeat[0], predFeatCat = False)
-    LGBM_SizeClass = LightGBM.LightGBM(dataInterpolated, data.quantFeat, data.catFeat, data.predictFeat[1], predFeatCat = True, testData = testData)
-
-
+    # LGBM_FireSpread = LightGBM.LightGBM(dataInterpolated, data.quantFeat, data.catFeat, data.predictFeat[0], predFeatCat = False)
+    # LGBM_SizeClass = LightGBM.LightGBM(dataInterpolated, data.quantFeat, data.catFeat, data.predictFeat[1], predFeatCat = True, testData = testData)
 
 
 

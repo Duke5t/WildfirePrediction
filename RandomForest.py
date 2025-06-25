@@ -2,8 +2,10 @@ from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, accuracy_score, mean_squared_error, r2_score
 from sklearn.preprocessing import LabelEncoder, OneHotEncoder
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.model_selection import cross_val_score, train_test_split
+from imblearn.over_sampling import SMOTE
 
 
 
@@ -32,8 +34,8 @@ class RandomForest:
     def __init__(self, df, quantFeat, catFeat, predFeat, predFeatCat = False, testData = None):
         print("\n---RANDOM FOREST---\n")
 
-        NUM_TREES_CAT = 400 # Number of trees in the forest - categorical predicition
-        NUM_TREES_QUANT = 400 # Number of trees in the forest - quantitative predicition
+        NUM_TREES_CAT = 800 # Number of trees in the forest - categorical predicition
+        NUM_TREES_QUANT = 800 # Number of trees in the forest - quantitative predicition
         
 
         self.df = df.copy()
@@ -55,8 +57,8 @@ class RandomForest:
         elif predFeatCat:
             self.fireY = self.labelEncoder.fit_transform(rawY)
         else:
-            self.fireY = rawY
-
+            # Apply log transform for skewed data
+            self.fireY = np.log1p(rawY)
 
         #fireX is quant variables + OneHotEncoded cat variables
         self.fireX = pd.concat([self.df[quantFeat], self.dfCat], axis=1)
@@ -65,13 +67,19 @@ class RandomForest:
         #Create RandomForestClassifier
         #n_estimators = # of trees
         if predFeatCat:
-            self.fireRF = RandomForestClassifier(n_estimators = NUM_TREES_CAT, oob_score = True)
+            self.fireRF = RandomForestClassifier(n_estimators = NUM_TREES_CAT, max_depth=20, oob_score = True)
         else:
-            self.fireRF = RandomForestRegressor(n_estimators = NUM_TREES_QUANT, oob_score = True)
+            self.fireRF = RandomForestRegressor(n_estimators = NUM_TREES_QUANT, max_depth=20, oob_score = True)
         
         #Split train/test if necessary (If there is no test data given)
         if testData is None:
-            self.trainX, self.testX, self.trainY, self.testY = train_test_split(self.fireX, self.fireY, test_size=0.2, stratify=self.fireY if predFeatCat else None)
+            self.trainX, self.testX, self.trainY, self.testY = train_test_split(
+                self.fireX, self.fireY, test_size=0.2, stratify=self.fireY if predFeatCat else None)
+            
+            if predFeatCat:
+                # Apply SMOTE for categorical underrepresented classes
+                smote = SMOTE()
+                self.trainX, self.trainY = smote.fit_resample(self.trainX, self.trainY)
         else: 
             self.trainX = self.fireX
             self.trainY = self.fireY
@@ -79,7 +87,9 @@ class RandomForest:
             self.testY = testData[predFeat]
             if predFeatCat:
                 self.testY = self.labelEncoder.transform(self.testY)
-
+            else:
+                #Log transform test
+                self.testY = np.log1p(self.testY)
 
 
         #Train the classifier/regressor
@@ -98,27 +108,28 @@ class RandomForest:
 
             self.yHat = self.fireRF.predict(self.testX)
             
-            print(f'Accuracy: {accuracy_score(self.testY, self.yHat):.4f}')
+            print(f'Accuracy: {accuracy_score(self.testY, self.yHat):.4f} With {NUM_TREES_CAT} Trees')
 
         # IF the feature we're predicting is NOT categorical 
         else:
             self.yHat = self.fireRF.predict(self.testX)
 
-            mse = mean_squared_error(self.testY, self.yHat)
-            r2 = r2_score(self.testY, self.yHat)
-            print(f'MSE: {mse:.4f}')
-            print(f'R^2: {r2:.4f}')
+            # Inverse log transform predictions and targets
+            yHat_original = np.expm1(self.yHat)
+            testY_original = np.expm1(self.testY)
+
+            mse = mean_squared_error(testY_original, yHat_original)
+            r2 = r2_score(testY_original, yHat_original)
+            print(f'MSE: {mse:.4f} ({NUM_TREES_QUANT} Trees)')
+            print(f'R^2: {r2:.4f} ({NUM_TREES_QUANT} Trees)')
             # scores = cross_val_score(self.fireRF, self.fireX, self.fireY, cv=5, scoring='r2')
             # print(f"Cross-validated R² scores: {scores}")
             # print(f"Mean CV R²: {scores.mean():.4f}")
 
-
-
-        print(f'Accuracy with training data (should be high): {self.fireRF.score(self.fireX, self.fireY):.4f}') #Prints accuracy when compared to training Data (should be really high)
-
         if predFeatCat:
             self.plotOOB(testData)
             self.plotTestData()
+            print(f'F1: {self.computeF1(self.testY, self.yHat):.4f}')
             print(f'OOB data score: {self.fireRF.oob_score_:.4f}') #Prints accuracy when compared to OOB Data (Out Of Bag)
         else:
             print(f'OOB R^2 score: {self.fireRF.oob_score_:.4f}')
@@ -143,11 +154,24 @@ class RandomForest:
         cmd = ConfusionMatrixDisplay(cm, display_labels = self.labelEncoder.classes_)
         cmd.plot(cmap=plt.cm.Greens)
         plt.title("Confusion Matrix: OOB DATA")
-        plt.show()
+        # plt.show()
 
     def plotTestData(self):
         cm = confusion_matrix(self.testY, self.yHat)
         cmd = ConfusionMatrixDisplay(cm, display_labels=self.labelEncoder.classes_)
         cmd.plot(cmap=plt.cm.Blues)
         plt.title("Confusion Matrix")
-        plt.show()
+        # plt.show()
+
+    def computeF1(self, y_true, y_pred):
+        labels = np.unique(np.concatenate([y_true, y_pred]))
+        f1s = []
+        for label in labels:
+            tp = np.sum((y_pred == label) & (y_true == label))
+            fp = np.sum((y_pred == label) & (y_true != label))
+            fn = np.sum((y_pred != label) & (y_true == label))
+            precision = tp / (tp + fp) if (tp + fp) > 0 else 0
+            recall = tp / (tp + fn) if (tp + fn) > 0 else 0
+            f1 = (2 * precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
+            f1s.append(f1)
+        return np.mean(f1s)  # macro average
