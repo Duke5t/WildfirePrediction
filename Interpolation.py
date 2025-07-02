@@ -58,9 +58,9 @@ class Interpolation:
             self.runCatInterpolation(quantFeatures, rCatFeatures, actual)
 
         # Confirms final df has no null values remaining
-        print(self.df.shape[0])
-        self.showFeatureNAs(self.df)
-        print(self.df.head(10))
+        # print(self.df.shape[0])
+        # self.showFeatureNAs(self.df)
+        # print(self.df.head(10))
 
     # Drops rows with any NA values
     # Normalizes data

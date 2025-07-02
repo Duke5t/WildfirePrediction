@@ -5,6 +5,8 @@ import DataCleaning
 import pandas as pd
 import EDA
 import LightGBM
+import SVM
+
 
 #Notes:
 #IF we use test data in a model, we must use either interpolated or imputed data since those dataFrames exclude test data
@@ -39,49 +41,52 @@ def main():
         dataInterpolated = data.dfDropNull
         dataImputed = data.dfDropNull
         dataDropNull = data.dfDropNull
-
-
-
         
     #EDA
-    # EDA.EDA(data.df)
+    # EDA.EDA(d/ata.df)
     #END EDA
-
-
-
-
 
     #RandomForest
     # print("\n\nRF Interpolated")
-    # RFModel_IntFireSpread = RandomForest.RandomForest(dataInterpolated, data.quantFeat, data.catFeat, data.predictFeat[0], predFeatCat = False, testData = testData)
-    # print("\n\nRF Imputed")
-    # RFModel_ImpFireSpread = RandomForest.RandomForest(dataImputed, data.quantFeat, data.catFeat, data.predictFeat[0], predFeatCat = False, testData = testData)
+    # RF_IntFireSpread = RandomForest.RandomForest(dataInterpolated, data.quantFeat, data.catFeat, data.predictFeat[0], predFeatCat = False, testData = testData)
+    print("\n\nRF Imputed")
+    RF_ImpFireSpread = RandomForest.RandomForest(dataImputed, data.quantFeat, data.catFeat, data.predictFeat[0], predFeatCat = False, testData = testData)
     # print("\n\nRF DropNull")
-    # RFModel_NoNullFireSpread = RandomForest.RandomForest(dataDropNull, data.quantFeat, data.catFeat, data.predictFeat[0], predFeatCat = False)
+    # RF_NoNullFireSpread = RandomForest.RandomForest(dataDropNull, data.quantFeat, data.catFeat, data.predictFeat[0], predFeatCat = False)
     
     # # RandomForest.RandomForest(dataInterpolated, data.quantFeat, data.catFeat, data.predictFeat[0], predFeatCat = False)
 
     # print("\n\nRF Interpolated")
-    # RFModel_IntSizeClass = RandomForest.RandomForest(dataInterpolated, data.quantFeat, data.catFeat, data.predictFeat[1], predFeatCat = True, testData = testData)
-    # print("\n\nRF Imputed")
-    # RFModel_ImpSizeClass = RandomForest.RandomForest(dataImputed, data.quantFeat, data.catFeat, data.predictFeat[1], predFeatCat = True, testData = testData)
+    # RF_IntSizeClass = RandomForest.RandomForest(dataInterpolated, data.quantFeat, data.catFeat, data.predictFeat[1], predFeatCat = True, testData = testData)
+    print("\n\nRF Imputed")
+    RF_ImpSizeClass = RandomForest.RandomForest(dataImputed, data.quantFeat, data.catFeat, data.predictFeat[1], predFeatCat = True, testData = testData)
     # print("\n\nRF NoNull")
-    # RFModel_NoNullSizeClass = RandomForest.RandomForest(dataDropNull, data.quantFeat, data.catFeat, data.predictFeat[1], predFeatCat = True)
+    # RF_NoNullSizeClass = RandomForest.RandomForest(dataDropNull, data.quantFeat, data.catFeat, data.predictFeat[1], predFeatCat = True)
     # RandomForest.RandomForest(dataInterpolated, data.quantFeat, data.catFeat, data.predictFeat[1], predFeatCat = True)
     
 
-    # XGBoost - uses data with null values
-    XGBModel_FireSpread = XGBoost.XGBoost(dataRaw, data.quantFeat, data.catFeat, data.predictFeat[0], predFeatCat = False)
-    XGBModel_SizeClass = XGBoost.XGBoost(dataRaw, data.quantFeat, data.catFeat, data.predictFeat[1], predFeatCat = True)
-
-    # XGBModel_SizeClass = XGBoost.XGBoost(dataImputed, data.quantFeat, data.catFeat, data.predictFeat[1], predFeatCat = True, testData = testData)
+    # XGBoost - uses data with null values (dont use special test data here)
+    XGB_FireSpread = XGBoost.XGBoost(dataRaw, data.quantFeat, data.catFeat, data.predictFeat[0], predFeatCat = False)
+    XGB_SizeClass = XGBoost.XGBoost(dataRaw, data.quantFeat, data.catFeat, data.predictFeat[1], predFeatCat = True)
 
 
     #LightGBM
-    # LGBM_FireSpread = LightGBM.LightGBM(dataInterpolated, data.quantFeat, data.catFeat, data.predictFeat[0], predFeatCat = False)
-    # LGBM_SizeClass = LightGBM.LightGBM(dataInterpolated, data.quantFeat, data.catFeat, data.predictFeat[1], predFeatCat = True, testData = testData)
+    LGBM_FireSpread = LightGBM.LightGBM(dataImputed, data.quantFeat, data.catFeat, data.predictFeat[0], predFeatCat = False, testData = testData)
+    LGBM_SizeClass = LightGBM.LightGBM(dataImputed, data.quantFeat, data.catFeat, data.predictFeat[1], predFeatCat = True, testData = testData)
+
+    #SVM
+    SVM_FireSpread = SVM.SVM(dataImputed, data.quantFeat, data.catFeat, data.predictFeat[0], predFeatCat = False, testData = testData)
+    SVM_SizeClass = SVM.SVM(dataImputed, data.quantFeat, data.catFeat, data.predictFeat[1], predFeatCat = True, testData = testData)
 
 
+    #CREATES CSV OF ALL MODEL RESULTS
+    result = pd.concat(
+        [RF_ImpFireSpread.results, RF_ImpSizeClass.results,
+         LGBM_FireSpread.results, LGBM_SizeClass.results, 
+         XGB_FireSpread.results, XGB_SizeClass.results,
+         SVM_FireSpread.results, SVM_SizeClass.results
+        ], axis=0)
+    result.to_csv("ModelResults.csv", float_format='%.4f')
 
 
 if __name__ == "__main__":

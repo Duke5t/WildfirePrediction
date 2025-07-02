@@ -12,7 +12,6 @@ from imblearn.over_sampling import SMOTE
 #TODO
 #- Apply SMOTE...
 
-# HOW TO USE
 
 class XGBoost:
 
@@ -26,7 +25,9 @@ class XGBoost:
     #                            column dimensions must match 'df' input. 
     def __init__(self, df, quantFeat, catFeat, predFeat, predFeatCat = False, testData = None):
         print(f"\n---XGBOOST---\n\":{predFeat}\"")
-
+        ##Toggle graphical results display##
+        self._graphs = False #TOGGLE ME
+        
         ##Parameters##
         self.quantLearnRate = 0.1
         self.catLearnRate = 1
@@ -127,9 +128,21 @@ class XGBoost:
         ##ADDED early stopping to avoid overfitting
         self.bst.fit(X_train, y_train, eval_set=[(X_test, y_test)], verbose=False)
         preds = self.bst.predict(X_test)
+        acc = accuracy_score(y_test, preds)
+        f1 = self.computeF1(y_test, preds)
+        print(f"Accuracy: {acc:.4f}")
+        print(f"F1 Score (Macro): {f1:.4f}")
 
-        print(f"Accuracy: {accuracy_score(y_test, preds):.4f}")
-        print(f"F1 Score (Macro): {self.computeF1(y_test, preds):.4f}")
+        #Stores results for main class usage
+        #index [model, MSE, RMSE, r^2, accuracy, f1score]
+        self.results = pd.Series({
+                    "Model": "XGBoost",
+                    "MSE": None,
+                    "RMSE": None,
+                    "R2": None,
+                    "Accuracy": acc,
+                    "F1 Score": f1
+                })
 
         
     def xgbQuant(self, X_train, X_test, y_train, y_test):
@@ -150,28 +163,44 @@ class XGBoost:
         preds = np.expm1(preds_log)  # inverse transform
         y_true = np.expm1(y_test_log)
 
-        print(f"RMSE: {mean_squared_error(y_true, preds):.4f}")
-        print(f"R^2: {r2_score(y_true, preds):.4f}")
+        mse = mean_squared_error(y_true, preds)
+        r2 = r2_score(y_true, preds)
 
+        print(f"MSE: {mse:.4f}")
+        print(f"RMSE: {np.sqrt(mse):.4f}")
+        print(f"R^2: {r2:.4f}")
+
+        #Stores results for main class usage
+        #index [model, MSE, RMSE, r^2, accuracy, f1score]
+        self.results = pd.Series({
+                "Model": "XGBoost",
+                "MSE": mse,
+                "RMSE": np.sqrt(mse),
+                "R2": r2,
+                "Accuracy": None,
+                "F1 Score": None
+            })
 
     def plotCat(self):
-        results = self.bst.evals_result()
-        plt.plot(results['validation_0']['mlogloss'], label='Loss')
-        plt.title("XGBoost Log Loss Over Iterations")
-        plt.xlabel("Iterations")
-        plt.ylabel("Log Loss")
-        plt.legend()
-        plt.show()
+        if self._graphs:
+            results = self.bst.evals_result()
+            plt.plot(results['validation_0']['mlogloss'], label='Loss')
+            plt.title("XGBoost Log Loss Over Iterations")
+            plt.xlabel("Iterations")
+            plt.ylabel("Log Loss")
+            plt.legend()
+            plt.show()
 
 
     def plotQuant(self):
-        results = self.bst.evals_result()
-        plt.plot(results['validation_0']['rmse'], label='RMSE')
-        plt.title("XGBoost RMSE Over Iterations")
-        plt.xlabel("Iterations")
-        plt.ylabel("RMSE")
-        plt.legend()
-        plt.show()
+        if self._graphs:
+            results = self.bst.evals_result()
+            plt.plot(results['validation_0']['rmse'], label='RMSE')
+            plt.title("XGBoost RMSE Over Iterations")
+            plt.xlabel("Iterations")
+            plt.ylabel("RMSE")
+            plt.legend()
+            plt.show()
 
 
     def computeF1(self, y_true, y_pred):

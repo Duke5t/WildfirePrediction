@@ -34,8 +34,8 @@ class RandomForest:
     def __init__(self, df, quantFeat, catFeat, predFeat, predFeatCat = False, testData = None):
         print("\n---RANDOM FOREST---\n")
 
-        NUM_TREES_CAT = 800 # Number of trees in the forest - categorical predicition
-        NUM_TREES_QUANT = 800 # Number of trees in the forest - quantitative predicition
+        NUM_TREES_CAT = 900 # Number of trees in the forest - categorical predicition
+        NUM_TREES_QUANT = 300 # Number of trees in the forest - quantitative predicition
         
 
         self.df = df.copy()
@@ -108,7 +108,22 @@ class RandomForest:
 
             self.yHat = self.fireRF.predict(self.testX)
             
-            print(f'Accuracy: {accuracy_score(self.testY, self.yHat):.4f} With {NUM_TREES_CAT} Trees')
+
+            acc = accuracy_score(self.testY, self.yHat)
+            f1 = self.computeF1(self.testY, self.yHat)
+            print(f'Accuracy: {acc:.4f} With {NUM_TREES_CAT} Trees')
+            print(f'F1: {f1:.4f}')
+
+            #Stores results for main class usage
+            #index [model, MSE, RMSE, r^2, accuracy, f1score]
+            self.results = pd.Series({
+                    "Model": "Random Forest",
+                    "MSE": None,
+                    "RMSE": None,
+                    "R2": None,
+                    "Accuracy": acc,
+                    "F1 Score": f1
+                })
 
         # IF the feature we're predicting is NOT categorical 
         else:
@@ -121,15 +136,23 @@ class RandomForest:
             mse = mean_squared_error(testY_original, yHat_original)
             r2 = r2_score(testY_original, yHat_original)
             print(f'MSE: {mse:.4f} ({NUM_TREES_QUANT} Trees)')
+            print(f'RMSE: {np.sqrt(mse):.4f} ({NUM_TREES_QUANT} Trees)')
             print(f'R^2: {r2:.4f} ({NUM_TREES_QUANT} Trees)')
-            # scores = cross_val_score(self.fireRF, self.fireX, self.fireY, cv=5, scoring='r2')
-            # print(f"Cross-validated R² scores: {scores}")
-            # print(f"Mean CV R²: {scores.mean():.4f}")
+
+            #Stores results for main class usage
+            #index [model, MSE, RMSE, r^2, accuracy, f1score]
+            self.results = pd.Series({
+                    "Model": "Random Forest",
+                    "MSE": mse,
+                    "RMSE": np.sqrt(mse),
+                    "R2": r2,
+                    "Accuracy": None,
+                    "F1 Score": None
+                })
 
         if predFeatCat:
             self.plotOOB(testData)
             self.plotTestData()
-            print(f'F1: {self.computeF1(self.testY, self.yHat):.4f}')
             print(f'OOB data score: {self.fireRF.oob_score_:.4f}') #Prints accuracy when compared to OOB Data (Out Of Bag)
         else:
             print(f'OOB R^2 score: {self.fireRF.oob_score_:.4f}')
