@@ -8,11 +8,12 @@ import numpy as np
 import pandas as pd
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from imblearn.over_sampling import SMOTE
+import Evaluation
 
 
 #TODO
 # add option for test data
-class SVM:
+class SVM():
 
     def __init__(self, df, quantFeat, catFeat, predFeat, predFeatCat=False, testData=None):
         print(f"\n---SUPPORT VECTOR MACHINE---\n\"{predFeat}\"")
@@ -56,26 +57,15 @@ class SVM:
 
 
     def svmCat(self, X_train, X_test, y_train, y_test):
-        self.model = SVC(kernel='rbf', class_weight='balanced', C=1.0, gamma='scale')
+        self.model = SVC(kernel='rbf', class_weight='balanced', C=1.0, gamma='scale' , random_state = 1)
         self.model.fit(X_train, y_train)
         preds = self.model.predict(X_test)
 
 
-        acc = accuracy_score(y_test, preds)
-        f1 = self.computeF1(y_test, preds)
-        print(f"Accuracy: {acc:.4f}")
-        print(f"F1 Score (Macro): {f1:.4f}")
+        # Calculates Evaluation metrics
+        self.eval = Evaluation.Evaluation(preds, y_test, "SVM", categorical=True)
+        self.results = self.eval.results
 
-        #Stores results for main class usage
-        #index [model, MSE, RMSE, r^2, accuracy, f1score]
-        self.results = pd.Series({
-                    "Model": "SVM",
-                    "MSE": None,
-                    "RMSE": None,
-                    "R2": None,
-                    "Accuracy": acc,
-                    "F1 Score": f1
-                })
 
     def svmQuant(self, X_train, X_test, y_train_log, y_test_log):
         self.model = SVR(kernel='rbf', C=1.0, epsilon=0.1)
@@ -83,29 +73,20 @@ class SVM:
         preds_log = self.model.predict(X_test)
 
         preds = np.expm1(preds_log)
-        y_true = np.expm1(y_test_log)
+        y_test = np.expm1(y_test_log)
 
-        mse = mean_squared_error(y_true, preds)
-        r2 = r2_score(y_true, preds)
+        # Calculates Evaluation metrics
+        self.eval = Evaluation.Evaluation(preds, y_test, "SVM", categorical=False)
+        self.results = self.eval.results
 
-        print(f"MSE: {mse:.4f}")
-        print(f"RMSE: {np.sqrt(mse):.4f}")
-        print(f"R^2: {r2:.4f}")
-
-        #Stores results for main class usage
-        #index [model, MSE, RMSE, r^2, accuracy, f1score]
-        self.results = pd.Series({
-                "Model": "SVM",
-                "MSE": mse,
-                "RMSE": np.sqrt(mse),
-                "R2": r2,
-                "Accuracy": None,
-                "F1 Score": None
-            })
 
     def computeF1(self, y_true, y_pred):
+        # Ensures all labels are represented
         labels = np.unique(np.concatenate([y_true, y_pred]))
         f1s = []
+        precs = []
+        recalls = []
+
         for label in labels:
             tp = np.sum((y_pred == label) & (y_true == label))
             fp = np.sum((y_pred == label) & (y_true != label))
@@ -113,8 +94,10 @@ class SVM:
             precision = tp / (tp + fp) if (tp + fp) > 0 else 0
             recall = tp / (tp + fn) if (tp + fn) > 0 else 0
             f1 = (2 * precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
+            precs.append(precision)
+            recalls.append(recall)
             f1s.append(f1)
-        return np.mean(f1s)
+        return np.mean(precs), np.mean(recall), np.mean(f1s)
 
     def upsampleMinorityClasses(self, X, y):
         df = X.copy()

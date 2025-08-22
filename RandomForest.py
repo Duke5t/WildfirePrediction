@@ -6,6 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.model_selection import cross_val_score, train_test_split
 from imblearn.over_sampling import SMOTE
+import Evaluation
 
 
 
@@ -67,9 +68,9 @@ class RandomForest:
         #Create RandomForestClassifier
         #n_estimators = # of trees
         if predFeatCat:
-            self.fireRF = RandomForestClassifier(n_estimators = NUM_TREES_CAT, max_depth=20, oob_score = True)
+            self.fireRF = RandomForestClassifier(n_estimators = NUM_TREES_CAT, class_weight='balanced', max_depth=20, oob_score = True, random_state = 1)
         else:
-            self.fireRF = RandomForestRegressor(n_estimators = NUM_TREES_QUANT, max_depth=20, oob_score = True)
+            self.fireRF = RandomForestRegressor(n_estimators = NUM_TREES_QUANT, max_depth=20, oob_score = True, random_state = 1)
         
         #Split train/test if necessary (If there is no test data given)
         if testData is None:
@@ -109,46 +110,21 @@ class RandomForest:
             self.yHat = self.fireRF.predict(self.testX)
             
 
-            acc = accuracy_score(self.testY, self.yHat)
-            f1 = self.computeF1(self.testY, self.yHat)
-            print(f'Accuracy: {acc:.4f} With {NUM_TREES_CAT} Trees')
-            print(f'F1: {f1:.4f}')
-
-            #Stores results for main class usage
-            #index [model, MSE, RMSE, r^2, accuracy, f1score]
-            self.results = pd.Series({
-                    "Model": "Random Forest",
-                    "MSE": None,
-                    "RMSE": None,
-                    "R2": None,
-                    "Accuracy": acc,
-                    "F1 Score": f1
-                })
+            # Calculates Evaluation metrics
+            self.eval = Evaluation.Evaluation(self.yHat, self.testY, "RandomForest", categorical=True)
+            self.results = self.eval.results
 
         # IF the feature we're predicting is NOT categorical 
         else:
             self.yHat = self.fireRF.predict(self.testX)
 
             # Inverse log transform predictions and targets
-            yHat_original = np.expm1(self.yHat)
-            testY_original = np.expm1(self.testY)
+            preds = np.expm1(self.yHat)
+            testY = np.expm1(self.testY)
 
-            mse = mean_squared_error(testY_original, yHat_original)
-            r2 = r2_score(testY_original, yHat_original)
-            print(f'MSE: {mse:.4f} ({NUM_TREES_QUANT} Trees)')
-            print(f'RMSE: {np.sqrt(mse):.4f} ({NUM_TREES_QUANT} Trees)')
-            print(f'R^2: {r2:.4f} ({NUM_TREES_QUANT} Trees)')
-
-            #Stores results for main class usage
-            #index [model, MSE, RMSE, r^2, accuracy, f1score]
-            self.results = pd.Series({
-                    "Model": "Random Forest",
-                    "MSE": mse,
-                    "RMSE": np.sqrt(mse),
-                    "R2": r2,
-                    "Accuracy": None,
-                    "F1 Score": None
-                })
+            # Calculates Evaluation metrics
+            self.eval = Evaluation.Evaluation(preds, testY, "RandomForest", categorical=False)
+            self.results = self.eval.results
 
         if predFeatCat:
             self.plotOOB(testData)

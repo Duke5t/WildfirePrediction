@@ -4,6 +4,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import mean_squared_error, r2_score, accuracy_score
 import numpy as np
+import Evaluation
 
 class LightGBM:
     def __init__(self, df, quantFeat, catFeat, predFeat, predFeatCat=False, testData=None):
@@ -60,48 +61,22 @@ class LightGBM:
 
     def _train(self, X_train, y_train):
         if self.predFeatCat:
-            self.model = lgb.LGBMClassifier()
+            self.model = lgb.LGBMClassifier(
+                        objective = 'multiclass', class_weight='balanced',
+                        n_estimators = 100, max_depth = 6, verbosity = -1, random_state = 1)
         else:
-            self.model = lgb.LGBMRegressor()
+            self.model = lgb.LGBMRegressor(
+                        objective = 'huber', n_estimators=100,
+                        max_depth=6, learning_rate=0.1, verbosity = -1, random_state = 1)
+            
         self.model.fit(X_train, y_train)
 
     def _evaluate(self, X_test, y_test):
         y_pred = self.model.predict(X_test)
-        print(f"\nEvaluating prediction for '{self.predFeat}'")
-        if self.predFeatCat:
-            acc = accuracy_score(y_test, y_pred)
-            f1 = self.computeF1(y_test, y_pred)
-            print(f"Accuracy: {acc:.4f}")
-            print(f"F1 Score: {f1:.4}")
-
-            #Stores results for main class usage
-            #index [model, MSE, RMSE, r^2, accuracy, f1score]
-            self.results = pd.Series({
-                    "Model": "LightGBM",
-                    "MSE": None,
-                    "RMSE": None,
-                    "R2": None,
-                    "Accuracy": acc,
-                    "F1 Score": f1
-                })
-
-        else:
-            mse = mean_squared_error(y_test, y_pred)
-            r2 = r2_score(y_test, y_pred)
-            print(f"MSE: {mse:.4f}")
-            print(f"RMSE: {np.sqrt(mse):.4f}")
-            print(f"R^2 Score: {r2:.4f}")
-            
-            #Stores results for main class usage
-            #index [model, MSE, RMSE, r^2, accuracy, f1score]
-            self.results = pd.Series({
-                    "Model": "LightGBM",
-                    "MSE": mse,
-                    "RMSE": np.sqrt(mse),
-                    "R2": r2,
-                    "Accuracy": None,
-                    "F1 Score": None
-                })
+        
+        # Calculates Evaluation metrics
+        self.eval = Evaluation.Evaluation(y_pred, y_test, "LightGBM", categorical=self.predFeatCat)
+        self.results = self.eval.results
 
     def predict(self, df):
         df = df.copy()

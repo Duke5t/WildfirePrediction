@@ -1,25 +1,7 @@
 # The purpose of this class will be to use multiple linear regression 
 # to predict the fuel type of the fire (type of trees/vegetation) based on the following factors
 
-# Quantitative Data
-# “WIND_SPEED”
-# “TEMPERATURE”
-# “RELATIVE_HUMIDITY”
 
-# Categorical Features
-# “FIRE_START_DATE” ?????
-# “WIND_DIRECTION”
-# “FUEL_TYPE”
-# “FIRE_POSITION_ON_SLOPE”
-# “WEATHER_CONDITIONS_OVER_FIRE”
-# “GENERAL_CAUSE”
-
-
-
-#TODO 
-# set / choose initial values for gradient descent
-# Choose learning rate alpha
-# Choose convergence value epsilon
 
 import pandas as pd
 import numpy as np
@@ -41,7 +23,6 @@ class Interpolation:
         print("\n---INTERPOLATION---\n")
 
         self.df = df.copy() #includes only features being used
-        print(self.df.shape[0])
 
         #runs Interpolation on each quantitative feature and updates dataframe NA cells with interpolated values  
         for actual in quantFeatures:
@@ -59,7 +40,7 @@ class Interpolation:
 
         # Confirms final df has no null values remaining
         # print(self.df.shape[0])
-        # self.showFeatureNAs(self.df)
+        self.showFeatureNAs(self.df)
         # print(self.df.head(10))
 
     # Drops rows with any NA values
@@ -210,9 +191,6 @@ class Interpolation:
             b = b - alpha * dj_db
             history.append(self.computeCost(x, y, w, b))
 
-            if i % 100 == 0:
-                print(f"Iteration {i:4d}: Cost {history[-1]:8.2f}   ")
-
         return w, b, history
 
     #Uses logistic regression with softmax function
@@ -264,9 +242,6 @@ class Interpolation:
             # Cross-entropy loss (log loss) (1e-15 prevents log(0) error)
             loss = -np.mean(np.sum(yOneHot * np.log(probs + 1e-15), axis=1))
             history.append(loss)
-
-            if i % 100 == 0:
-                print(f"Iteration {i}: Loss = {loss:.4f}")
 
         print(f"Converged at iteration {i}")
         return w, b

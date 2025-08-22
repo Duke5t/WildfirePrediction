@@ -1,16 +1,14 @@
-from sklearn.metrics import accuracy_score, mean_squared_error, r2_score
+from sklearn.metrics import accuracy_score, mean_squared_error, r2_score, confusion_matrix, ConfusionMatrixDisplay
 from xgboost import XGBClassifier, XGBRegressor
-from sklearn.model_selection import train_test_split 
+from sklearn.model_selection import train_test_split, RandomizedSearchCV
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 from sklearn.preprocessing import LabelEncoder
 from sklearn.utils import resample
+import Evaluation
 from imblearn.over_sampling import SMOTE
 
-
-#TODO
-#- Apply SMOTE...
 
 
 class XGBoost:
@@ -27,12 +25,9 @@ class XGBoost:
         print(f"\n---XGBOOST---\n\":{predFeat}\"")
         ##Toggle graphical results display##
         self._graphs = False #TOGGLE ME
-        
-        ##Parameters##
-        self.quantLearnRate = 0.1
-        self.catLearnRate = 1
-        self.quantNumBoostedTrees = 100
-        self.catNumBoostedTrees = 50
+
+        ##Toggle hyperparameter tuning##
+        self._tuneParams = False #TOGGLE ME
 
         self.quantFeat = quantFeat
         self.catFeat = catFeat
@@ -43,6 +38,8 @@ class XGBoost:
 
         self.df = df.copy()
         self.labelEncoder = LabelEncoder()
+
+        self.initializeHyperparams()
 
         self.df = self.df.dropna(subset=[self.predFeat]) ##AVOIDS TRAINING/TESTING ON NULL VALUES
 
@@ -90,7 +87,7 @@ class XGBoost:
             # self.plotCat()
             pass
 
-        #If we're traomomg a categorical variable and we have nulls/dont want to use SMOTE (we use simple upsampling by duplicating examples from minority classes)
+        #If we're training a categorical variable and we have nulls/dont want to use SMOTE (we use simple upsampling by duplicating examples from minority classes)
         elif self.predFeatCat: 
             fireY = self.labelEncoder.fit_transform(fireY)
             X_train, X_test, y_train, y_test = train_test_split(fireX, fireY, test_size=0.2)
@@ -113,73 +110,96 @@ class XGBoost:
 
                 
         
-
     def xgbCat(self, X_train, X_test, y_train, y_test):
         #n_estimators = Number of gradient boosted trees. Equivalent to number of boosting rounds.
         #max_depth = tree depth/height
         #objective = learning model (log regression softmax = multi:softprob)
         #learning rate = scaler multiplier to default??? maybe???
 
-        self.bst = XGBClassifier(n_estimators=self.catNumBoostedTrees, learning_rate=self.catLearnRate, 
-                                 objective='multi:softprob', enable_categorical=True, 
-                                 eval_metric="mlogloss", early_stopping_rounds=10, tree_method='hist')
-
-
-        ##ADDED early stopping to avoid overfitting
-        self.bst.fit(X_train, y_train, eval_set=[(X_test, y_test)], verbose=False)
-        preds = self.bst.predict(X_test)
-        acc = accuracy_score(y_test, preds)
-        f1 = self.computeF1(y_test, preds)
-        print(f"Accuracy: {acc:.4f}")
-        print(f"F1 Score (Macro): {f1:.4f}")
-
-        #Stores results for main class usage
-        #index [model, MSE, RMSE, r^2, accuracy, f1score]
-        self.results = pd.Series({
-                    "Model": "XGBoost",
-                    "MSE": None,
-                    "RMSE": None,
-                    "R2": None,
-                    "Accuracy": acc,
-                    "F1 Score": f1
-                })
-
+        if self._tuneParams:
+            self.bst = XGBClassifier(enable_categorical=True, tree_method='hist', use_label_encoder=False, random_state = 1)
+            param_dist = {**self.xgb_common_params, **self.xgb_class_params}
+    
+            search = RandomizedSearchCV(
+                estimator=self.bst,
+                param_distributions=param_dist,
+                n_iter=30,  # Adjust as needed
+                scoring='f1_macro',
+                cv=3,
+                verbose=0,
+                n_jobs=-1
+            )
+            search.fit(X_train, y_train)
+            self.bst = search.best_estimator_
+            print("Best XGBoost Hyperparams:")
+            print(search.best_estimator_)
         
+        #If not tuning hyperparameters
+        else:
+            self.bst = XGBClassifier(n_estimators = 500, learning_rate = 0.2, objective='multi:softprob', 
+                    enable_categorical=True, eval_metric="mlogloss", early_stopping_rounds=10, tree_method='hist', 
+                    colsample_bytree=1.0, gamma=0.05, max_depth=7, min_child_weight=1, use_label_encoder=False, random_state = 1
+                )
+            
+            # Early stopping to avoid overfitting
+            self.bst.fit(X_train, y_train, eval_set=[(X_test, y_test)], verbose=False)
+        
+        
+        preds = self.bst.predict(X_test)
+
+        # Plot Confusion Matrix
+        if self._graphs:
+            self.plotTestData(preds, y_test)
+        
+        # Calculates Evaluation metrics
+        self.eval = Evaluation.Evaluation(preds, y_test, "XGBoost", categorical=True)
+        self.results = self.eval.results
+
+    
     def xgbQuant(self, X_train, X_test, y_train, y_test):
 
         X_train, y_train_log = self.sanitize_target(X_train, y_train, apply_log=True)
         X_test, y_test_log = self.sanitize_target(X_test, y_test, apply_log=True)
 
 
-        self.bst = XGBRegressor(n_estimators=self.quantNumBoostedTrees, learning_rate=self.quantLearnRate, 
-                                objective='reg:squarederror', enable_categorical=True,
-                                eval_metric='rmse', early_stopping_rounds=10, tree_method='hist')
+        #If hyperparameter tuning
+        if self._tuneParams:
+            self.bst = XGBRegressor(enable_categorical=True, tree_method='hist', random_state = 1)
+            param_dist = {**self.xgb_common_params, **self.xgb_reg_params}
+
+            search = RandomizedSearchCV(
+                estimator=self.bst,
+                param_distributions=param_dist,
+                n_iter=30,
+                scoring='r2',
+                cv=3,
+                verbose=1,
+                n_jobs=-1
+            )
+            search.fit(X_train, y_train_log)
+            self.bst = search.best_estimator_
+            print("\nBest Hyperparameters (Regression):")
+            print(search.best_params_)
+
+        #If not hyperparameter tuning
+        else:
+            self.bst = XGBRegressor(n_estimators = 500, learning_rate = 0.05, 
+                        objective = 'reg:squarederror', enable_categorical=True, tree_method='hist', eval_metric = 'rmse', 
+                        min_child_weight = 5, max_depth = 10,  gamma = 0.2, subsample = 0.8, reg_lambda = 1, reg_alpha = 1, 
+                        colsample_bytree = 0.6, early_stopping_rounds=10, random_state = 1)
 
 
-        ##ADDED early stopping to avoid overfitting
-        self.bst.fit(X_train, y_train_log, eval_set=[(X_test, y_test_log)], verbose=False)
+            ##Early stopping to avoid overfitting
+            self.bst.fit(X_train, y_train_log, eval_set=[(X_test, y_test_log)], verbose=False)
 
         preds_log = self.bst.predict(X_test)
         preds = np.expm1(preds_log)  # inverse transform
-        y_true = np.expm1(y_test_log)
+        y_test = np.expm1(y_test_log)
+        
+        #  Calculates Evaluation metrics
+        self.eval = Evaluation.Evaluation(preds, y_test, "XGBoost", categorical=False)
+        self.results = self.eval.results
 
-        mse = mean_squared_error(y_true, preds)
-        r2 = r2_score(y_true, preds)
-
-        print(f"MSE: {mse:.4f}")
-        print(f"RMSE: {np.sqrt(mse):.4f}")
-        print(f"R^2: {r2:.4f}")
-
-        #Stores results for main class usage
-        #index [model, MSE, RMSE, r^2, accuracy, f1score]
-        self.results = pd.Series({
-                "Model": "XGBoost",
-                "MSE": mse,
-                "RMSE": np.sqrt(mse),
-                "R2": r2,
-                "Accuracy": None,
-                "F1 Score": None
-            })
 
     def plotCat(self):
         if self._graphs:
@@ -224,6 +244,7 @@ class XGBoost:
         for idx in sorted_idx:
             print(f"{self.selectedCols[idx]}: {importances[idx]:.4f}")
 
+
     def upsampleMinorityClasses(self, X, y):
         df = X.copy()
         df['label'] = y
@@ -242,6 +263,13 @@ class XGBoost:
         X_balanced = df_balanced.drop(columns='label')
 
         return X_balanced, y_balanced
+
+    def plotTestData(self, preds, y_test):
+        cm = confusion_matrix(y_test, preds)
+        cmd = ConfusionMatrixDisplay(cm, display_labels=self.labelEncoder.classes_)
+        cmd.plot(cmap=plt.cm.Blues)
+        plt.title("Confusion Matrix")
+        plt.show()
 
 
     def sanitize_target(self, X, y_raw, apply_log=True, clip_negatives=True):
@@ -267,3 +295,26 @@ class XGBoost:
         # Only filter X and y to remove rows with invalid target
         return X.loc[valid_index], y_clean.loc[valid_index]
     
+
+    def initializeHyperparams(self):
+        self.xgb_common_params = {
+            'n_estimators': [100, 200, 300, 400, 500, 600],
+            'learning_rate': [0.01, 0.05, 0.1, 0.2, 0.3],
+            'max_depth': [3, 5, 7, 10, 12],
+            'min_child_weight': [1, 3, 5, 7],
+            'subsample': [0.6, 0.8, 1.0],
+            'colsample_bytree': [0.6, 0.8, 1.0],
+            'gamma': [0, 0.01, 0.05, 0.1, 0.2, 0.3],
+            'reg_alpha': [0, 0.1, 0.5, 1],
+            'reg_lambda': [0.1, 0.5, 1, 1.5]
+        }
+
+        self.xgb_class_params = {
+            'objective': ['multi:softprob'],
+            'eval_metric': ['mlogloss']
+        }
+
+        self.xgb_reg_params = {
+            'objective': ['reg:squarederror'],
+            'eval_metric': ['rmse']
+        }

@@ -3,6 +3,8 @@ import Imputation
 import pandas as pd
 import numpy as np
 import os
+from sklearn.preprocessing import LabelEncoder
+
 
 class DataCleaning:
 
@@ -29,42 +31,46 @@ class DataCleaning:
                 self.df = temp_df
 
 
-
         #Dummy features:
-        self.quantFeat = ["TEMPERATURE", "RELATIVE_HUMIDITY", "WIND_SPEED"] # , "DISTANCE_FROM_WATER_SOURCE"
-        self.catFeat = ["FUEL_TYPE", "TRUE_CAUSE", "DETECTION_AGENT", "DETECTION_AGENT_TYPE", "FIRE_POSITION_ON_SLOPE", "WEATHER_CONDITIONS_OVER_FIRE", "GENERAL_CAUSE"]
+        self.quantFeat = ["TEMPERATURE", "RELATIVE_HUMIDITY", "WIND_SPEED"] 
+        self.catFeat = ["FUEL_TYPE", "GENERAL_CAUSE", "DETECTION_AGENT_TYPE", 
+                        "FIRE_POSITION_ON_SLOPE", "WEATHER_CONDITIONS_OVER_FIRE", 
+                        "TRUE_CAUSE", "DETECTION_AGENT", "FIRE_START_DATE"] #"TRUE_CAUSE"
         self.predictFeat = ["FIRE_SPREAD_RATE", "SIZE_CLASS"]
 
 
     def createDataFrames(self):
-
         #Drops unused features
         selectedCols = self.quantFeat + self.catFeat + self.predictFeat
         self.df = self.df[selectedCols]
-        
+        print(self.df.shape)
+
         #Removes firespread values <0 from DF
         self.df = self.df[self.df["FIRE_SPREAD_RATE"] >= 0]
 
+        #Trims Dates to Months
+        self.df["FIRE_START_DATE"] = self.df["FIRE_START_DATE"].str[5:7]
 
-        print(self.df.head(10))
+        #Round Lat and long to 3 significant digits
+        self.df["LATITUDE"] = round(self.df["LATITUDE"], 3)
+        self.df["LONGITUDE"] = round(self.df["LONGITUDE"], 3)
 
         #Creates DF with no null values
         self.dfDropNull = self.df.copy().dropna().reset_index(drop=True) 
 
-
         #Creates a test set to be used later. 
-        #Using 20% of the data but only if it has no null value
+        #Using 20% of the data but only if it has no null values
         ratio = self.df.shape[0]*self._testSplit/self.dfDropNull.shape[0]
         if(ratio > 1):
             raise Exception(f"Error: Not enough data without null values to populate Test DataFrame. Cannot make subset of {ratio: .2f}, x size.")
             
             self.dfTestData = self.dfDropNull ##Should I take the entire remaining data if test size cant be 20%???
 
-
         self.div = np.random.rand(len(self.dfDropNull)) < ratio
         #Sets special test subset containing complete data (no null, no interpolated, no imputed data)
         self.dfTestData = self.dfDropNull[self.div]
         self.dfTestData = self.dfTestData[self.dfTestData["FIRE_SPREAD_RATE"] >= 0]
+        self.test_indices = self.dfTestData.index
 
 
 
@@ -72,13 +78,18 @@ class DataCleaning:
         if not self.TEST:
             #Creates cleaned data by Interpolating with Lin and Log regression
             self.dfInterpolated = Interpolation.Interpolation(self.df, self.quantFeat, self.catFeat).df
+            #Normalizes all quantitative Features
+            self.dfInterpolated = self.normalize(self.dfInterpolated, self.quantFeat)
             #Removes any data that is also contained in the test df
-            self.dfInterpolated = pd.concat([self.dfInterpolated, self.dfTestData]).drop_duplicates(keep=False)
+            self.dfInterpolated = self.dfInterpolated[~self.dfInterpolated.index.isin(self.test_indices)]
+
 
             #Creates cleaned data by Imputing mean and mode values.
             self.dfImputed = Imputation.Imputation(self.df, self.quantFeat, self.catFeat).df
+            #Normalizes all quantitative features
+            self.dfImputed = self.normalize(self.dfImputed, self.quantFeat)
             #Removes any data that is also contained in the test df
-            self.dfImputed = pd.concat([self.dfImputed, self.dfTestData]).drop_duplicates(keep=False)
+            self.dfImputed = self.dfImputed[~self.dfImputed.index.isin(self.test_indices)]
 
 
 
@@ -118,6 +129,60 @@ class DataCleaning:
     def setTestSplit(self, ratio):
         self._testSplit = ratio
 
-
     def removeNegativeFireSpreadData(self):
         self.df = self.df[self.df["FIRE_SPREAD_RATE"] >= 0]
+
+    def normalize(self, df, quantFeat):
+        normalized_df = df.copy()
+
+        for col in quantFeat:
+            mean = df[col].mean()
+            std = df[col].std(ddof=0)
+            normalized_df[col] = (df[col] - mean) / std
+
+        return normalized_df
+
+
+    #FEATURE ENGINEERING:
+    # TEMPERATURE × WIND_SPEED (fires spread faster in hot, windy conditions)
+    # RELATIVE_HUMIDITY × FUEL_TYPE (moisture vs. burnable material)
+    # Removes old features which were combined into engineered features
+    def featureEngineering(self):
+
+        #list of all dataframes
+        dfs = [self.df, self.dfInterpolated, self.dfImputed, self.dfDropNull, self.dfTestData]
+
+        for df in dfs:
+            le = LabelEncoder()
+
+            fuelType = le.fit_transform(df["FUEL_TYPE"])
+
+            df["TEMP_AND_WIND"] = df["TEMPERATURE"] * df["WIND_SPEED"]
+            df["FUEL_AND_HUMIDITY"] = df["RELATIVE_HUMIDITY"] * fuelType
+            
+            
+            # Drop features used in engineering from all dfs
+            df.drop(["TEMPERATURE", "WIND_SPEED", "RELATIVE_HUMIDITY", "FUEL_TYPE"], axis=1, inplace=True)
+
+        
+        # Change features list
+        # ADD new features (engineered)
+        if "TEMP_AND_WIND" not in self.quantFeat:
+            self.quantFeat.append("TEMP_AND_WIND")
+        if "FUEL_AND_HUMIDITY" not in self.quantFeat:
+            self.quantFeat.append("FUEL_AND_HUMIDITY")
+
+        # REMOVE old features used
+        for feat in ["TEMPERATURE", "WIND_SPEED", "RELATIVE_HUMIDITY"]:
+            if feat in self.quantFeat:
+                self.quantFeat.remove(feat)
+
+        if "FUEL_TYPE" in self.catFeat:
+            self.catFeat.remove("FUEL_TYPE")
+
+        print("FEATURE ENGINEERING PRINTOUT:")
+        print(self.quantFeat)
+        print(self.catFeat)
+
+
+    
