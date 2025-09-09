@@ -6,4 +6,5 @@ matplotlib
 shapely
 folium
 imbalanced-learn
+scipy
 lightgbm
