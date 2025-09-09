@@ -1,4 +1,4 @@
 # WildfirePrediction
-(IN PROGRESS) ML Model used to predict size and spread of wildfires based on data available at point of ignition.
-
-  
+This study details a machine learning (ML) approach to a data-driven model which acts solely on information readily available at the onset of a wildfire (ignition-time).
+Employing four models—Random Forest, XGBoost, LightGBM, and Support Vector Machines (SVM) on 26,551 events in wildfire records from Alberta, Canada. Preprocessing included imputation of missing values using regression and classification techniques, normalization, and balancing of imbalanced size classes using oversampling, cost sensitive learning, and SMOTE. Evaluation metrics included accuracy, F1-score, precision, and recall for classification along with mean squared error and coefficient of determination (R2) for regression.
+Feature importance analysis highlighted the significance of Fuel Type, Detection Agent, Wind Speed, and Relative Humidity. These findings suggest that machine learning methods, ensemble boosting techniques, and specifically XGBoost, hold promise for supporting fire management agencies in real-time decision-making, though challenges remain in handling data imbalance, feature engineering, and limited predictive power for extreme events.
